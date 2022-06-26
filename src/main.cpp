@@ -117,7 +117,8 @@ static void render(Scene *scene, const std::string &filename) {
 
         /// Default: parallel rendering
         tbb::parallel_for(range, map);
-
+        cout << "my debug" << endl;
+        cout << scene->getAccel()->count.size() << endl;
         cout << "done. (took " << timer.elapsedString() << ")" << endl;
     });
 
