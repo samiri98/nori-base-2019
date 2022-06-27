@@ -28,24 +28,16 @@ void Accel::addMesh(Mesh *mesh) {
     m_bbox = m_mesh->getBoundingBox();
 }
 
+// todo: parallelize this code
 Accel::Node* Accel::build(BoundingBox3f box, std::vector<uint32_t> triangles, uint32_t depth) {
     if (triangles.size() == 0)
         return nullptr;
 
     if (triangles.size() <= 10 || depth > 10) {
-        /*if (depth > 500) {
-            cout << "depth problem" << endl;
-            cout << "number of triangles:" << endl;
-            cout << triangles.size() << endl;
-        }*/
         Accel::ChildNode* leaf = new Accel::ChildNode();
         leaf->type = 1;
         leaf->box = box;
         leaf->triangles = triangles;
-        for (size_t i = 0; i < triangles.size(); i++)
-        {
-            count.insert(triangles[i]);
-        }
         return leaf;
     }
 
@@ -64,8 +56,6 @@ Accel::Node* Accel::build(BoundingBox3f box, std::vector<uint32_t> triangles, ui
     
 
     for (int i = 0; i < 8; i++) {
-        /*cout << (Point3f(extent[0] / 2, extent[1] / 2, extent[2] / 2).cwiseProduct(dividors[i])) << endl;
-        cout << "+++++++++++++" << endl;*/
         auto newMax = box.max - (Point3f(extent[0] / 2, extent[1] / 2, extent[2] / 2).cwiseProduct(dividors[i]));
         auto newMin = newMax - (extent / 2);
         BoundingBox3f i_bbox(newMin, newMax);
@@ -75,21 +65,16 @@ Accel::Node* Accel::build(BoundingBox3f box, std::vector<uint32_t> triangles, ui
     for (auto triangle : triangles) {
         BoundingBox3f t_bbox = m_mesh->getBoundingBox(triangle);
         for (int i = 0; i < 8; i++) {
-            //cout << "enter" << endl;
             if (sub_bbox[i].overlaps(t_bbox, false)) {
                 list[i].push_back(triangle);
             }
         }
-        //cout << "exit" << endl;
     }
 
     Accel::ParentNode* node = new ParentNode();
     node->box = box;
     node->type = 0;
-    //node->children = new ParentNode;
     for (int i = 0; i < 8; ++i) {
-        //ParentNode* p = (ParentNode*)node->children;
-        //p->children[i] = build(sub_bbox[i], list[i]);
         node->children[i] = build(sub_bbox[i], list[i], depth+1);
     }
 
@@ -100,14 +85,11 @@ Accel::Node* Accel::build(BoundingBox3f box, std::vector<uint32_t> triangles, ui
 void Accel::build() {
     /* Nothing to do here for now */
     uint32_t size = m_mesh->getTriangleCount();
-    //count = 0;
     std::vector<uint32_t> v(size);
     for (int i = 0; i < size; i++) {
         v[i] = i;
     }
-
     m_root = build(m_bbox, v, 0);
-    std::cout << "hello" << std::endl;
 }
 
 bool Accel::octree_traversal(bool shadowRay, Ray3f &ray, Intersection& its, uint32_t &f, Node *node) const {
@@ -121,6 +103,9 @@ bool Accel::octree_traversal(bool shadowRay, Ray3f &ray, Intersection& its, uint
             ParentNode* p = (ParentNode *)node;
             for (auto c : p->children) {
                 foundIntersection = octree_traversal(shadowRay, ray, its, f, c) || foundIntersection;
+                if (foundIntersection && shadowRay) {
+                    return foundIntersection;
+                }
             }
         }
         else {
@@ -150,23 +135,10 @@ bool Accel::rayIntersect(const Ray3f &ray_, Intersection &its, bool shadowRay) c
 
     Ray3f ray(ray_); /// Make a copy of the ray (we will need to update its '.maxt' value)
 
-    /* Brute force search through all triangles */
-    //for (uint32_t idx = 0; idx < m_mesh->getTriangleCount(); ++idx) {
-    //    float u, v, t;
-    //    if (m_mesh->rayIntersect(idx, ray, u, v, t)) {
-    //        /* An intersection was found! Can terminate
-    //           immediately if this is a shadow ray query */
-    //        if (shadowRay)
-    //            return true;
-    //        ray.maxt = its.t = t;
-    //        its.uv = Point2f(u, v);
-    //        its.mesh = m_mesh;
-    //        f = idx;
-    //        foundIntersection = true;
-    //    }
-    //}
     foundIntersection = octree_traversal(shadowRay, ray, its, f, m_root);
-
+    if (foundIntersection && shadowRay) {
+        return foundIntersection;
+    }
 
     if (foundIntersection) {
         /* At this point, we now know that there is an intersection,
