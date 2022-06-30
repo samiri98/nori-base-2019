@@ -39,11 +39,14 @@ float Warp::squareToTentPdf(const Point2f &p) {
 }
 
 Point2f Warp::squareToUniformDisk(const Point2f &sample) {
-    throw NoriException("Warp::squareToUniformDisk() is not yet implemented!");
+    float r = sqrt(sample[0]);
+    float th = 2 * M_PI * sample[1];
+
+    return Point2f(r * cosf(th), r * sinf(th));
 }
 
 float Warp::squareToUniformDiskPdf(const Point2f &p) {
-    throw NoriException("Warp::squareToUniformDiskPdf() is not yet implemented!");
+    return p.squaredNorm() < 1.0f ? INV_PI : 0;
 }
 
 Vector3f Warp::squareToUniformSphere(const Point2f &sample) {
@@ -63,19 +66,42 @@ float Warp::squareToUniformHemispherePdf(const Vector3f &v) {
 }
 
 Vector3f Warp::squareToCosineHemisphere(const Point2f &sample) {
-    throw NoriException("Warp::squareToCosineHemisphere() is not yet implemented!");
+    Point2f diskPoint = squareToUniformDisk(sample);
+    return Vector3f(diskPoint[0], diskPoint[1], sqrt(1 - sample[0]));
 }
 
 float Warp::squareToCosineHemispherePdf(const Vector3f &v) {
-    throw NoriException("Warp::squareToCosineHemispherePdf() is not yet implemented!");
+    float cosTh = v.dot(Vector3f(0, 0, 1));
+    cosTh = cosTh < 0 ? 0 : cosTh;
+    return cosTh / M_PI;
 }
 
 Vector3f Warp::squareToBeckmann(const Point2f &sample, float alpha) {
-    throw NoriException("Warp::squareToBeckmann() is not yet implemented!");
+    float phi = 2.0f * M_PI * sample[0];
+    float logSample = log(1.0f-sample[1]);
+    if (std::isinf(logSample)) {
+        logSample = 0;
+    }
+
+    float tan2Theta = -alpha * alpha * logSample;
+    float cosTheta = 1 / sqrt(1+tan2Theta);
+    float sinTheta = std::sqrt(std::max(float(0), 1 - cosTheta * cosTheta));
+    //float sin2Theta = tan2Theta / (1.0f + tan2Theta);
+    //float cos2Theta = 1.0f / (1.0f + tan2Theta);
+    //return Vector3f(sqrt(sin2Theta) * cosf(phi), sqrt(sin2Theta) * sinf(phi), sqrt(cos2Theta));
+    return Vector3f(sinTheta * cosf(phi), sinTheta * sinf(phi), cosTheta);
 }
 
-float Warp::squareToBeckmannPdf(const Vector3f &m, float alpha) {
-    throw NoriException("Warp::squareToBeckmannPdf() is not yet implemented!");
+float Warp::squareToBeckmannPdf(const Vector3f& m, float alpha) {
+    float cos2Th = m[2] * m[2];
+    float tan2Th = (1- cos2Th)/cos2Th;
+    float cos3Th = cos2Th * m[2];
+    float num = -tan2Th / (alpha * alpha);
+    float denum = alpha * alpha * cos3Th;
+    float result = (1.0f / (2.0f * M_PI)) * (2 * exp(num)) / (denum);
+    result = result < 0 ? 0 : result;
+    result = isfinite(result) ? result : 0;
+    return result;
 }
 
 NORI_NAMESPACE_END
