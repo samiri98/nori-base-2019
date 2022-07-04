@@ -22,17 +22,42 @@
 
 NORI_NAMESPACE_BEGIN
 
+struct EmitterQueryRecord {
+    /// Incident position
+    Point3f p;
+
+    /// Outgoing direction (in the local frame)
+    Vector3f wo;
+
+    Vector3f n;
+
+    const Mesh* mesh;
+
+    EmitterQueryRecord(Point3f p, const Mesh *mesh) : p(p), mesh(mesh) {}
+};
+
 /**
  * \brief Superclass of all emitters
  */
 class Emitter : public NoriObject {
 public:
 
+    virtual Color3f sample(const Point3f& sample, EmitterQueryRecord& query) const = 0;
+
+    virtual Color3f eval(EmitterQueryRecord& query) const = 0;
+
+    virtual float pdf(EmitterQueryRecord& query) const = 0;
+
+    virtual Color3f getRadiance(const Mesh* mesh) const = 0;
+
     /**
      * \brief Return the type of object (i.e. Mesh/Emitter/etc.) 
      * provided by this instance
      * */
     EClassType getClassType() const { return EEmitter; }
+
+protected:
+    Color3f radiance;
 };
 
 NORI_NAMESPACE_END

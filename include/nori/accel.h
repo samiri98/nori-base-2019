@@ -42,7 +42,7 @@ public:
     };
 
     struct ChildNode: Node {
-        std::vector<uint32_t> triangles;
+        std::vector<std::vector<uint32_t>> triangles;
     };
 
     /**
@@ -62,7 +62,7 @@ public:
     /// <param name="box"> bounding box of the entire scene</param>
     /// <param name="triangles">list of indices of the m_mesh</param>
     /// <returns>the root of the octree</returns>
-    Node* build(BoundingBox3f box, std::vector<uint32_t> triangles, uint32_t depth);
+    Node* build(BoundingBox3f box, std::vector<std::vector<uint32_t>> triangles, uint32_t depth);
 
     bool Accel::octree_traversal(bool shadowRay, Ray3f& ray, Intersection& its, uint32_t& f, Node *node) const;
 
@@ -91,9 +91,11 @@ public:
     bool rayIntersect(const Ray3f &ray, Intersection &its, bool shadowRay) const;
 
 private:
-    Mesh         *m_mesh = nullptr; ///< Mesh (only a single one for now)
+    std::vector<Mesh *> m_mesh; ///< Mesh (only a single one for now)
     BoundingBox3f m_bbox;           ///< Bounding box of the entire scene
     Node         *m_root;           ///< Root of the octree
+public:
+    mutable int count;
 };
 
 NORI_NAMESPACE_END

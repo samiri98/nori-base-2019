@@ -30,6 +30,7 @@ Mesh::Mesh() { }
 Mesh::~Mesh() {
     delete m_bsdf;
     delete m_emitter;
+    delete m_discretePDF;
 }
 
 void Mesh::activate() {
@@ -38,6 +39,13 @@ void Mesh::activate() {
         m_bsdf = static_cast<BSDF *>(
             NoriObjectFactory::createInstance("diffuse", PropertyList()));
     }
+    auto numTriangles = getTriangleCount();
+    m_discretePDF = new DiscretePDF(numTriangles);
+    for (size_t i = 0; i < numTriangles; i++)
+    {
+        m_discretePDF->append(surfaceArea(i));
+    }
+    m_discretePDF->normalize();
 }
 
 float Mesh::surfaceArea(uint32_t index) const {
@@ -123,6 +131,33 @@ void Mesh::addChild(NoriObject *obj) {
             throw NoriException("Mesh::addChild(<%s>) is not supported!",
                                 classTypeName(obj->getClassType()));
     }
+}
+
+void Mesh::squareToArea(const Point3f& sample, Point3f& p, Vector3f& n) const {
+    size_t index = m_discretePDF->sample(sample[0]);
+
+    float alpha = 1.0f - sqrt(1.0f - sample[1]);
+    float beta = sample[2] * sqrt(1.0f - sample[1]);
+    float gama = 1.0f - alpha - beta;
+
+    uint32_t i0 = m_F(0, index), i1 = m_F(1, index), i2 = m_F(2, index);
+
+    const Point3f p0 = m_V.col(i0), p1 = m_V.col(i1), p2 = m_V.col(i2);
+
+    p = (alpha * p0) + (beta * p1) + (gama * p2);
+
+    if (m_N.size() > 0) {
+        // might be wrong
+        const Point3f n0 = m_N.col(i0), n1 = m_N.col(i1), n2 = m_N.col(i2);
+        n = (alpha * n0) + (beta * n1) + (gama * n2);
+    }
+    else {
+        n = (p1 - p0).cross(p2 - p0);
+    }
+}
+
+float Mesh::squareToAreaPDF() const {
+    return 1.0f / m_discretePDF->getSum();
 }
 
 std::string Mesh::toString() const {
