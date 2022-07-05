@@ -94,8 +94,6 @@ private:
     std::vector<Mesh *> m_mesh; ///< Mesh (only a single one for now)
     BoundingBox3f m_bbox;           ///< Bounding box of the entire scene
     Node         *m_root;           ///< Root of the octree
-public:
-    mutable int count;
 };
 
 NORI_NAMESPACE_END

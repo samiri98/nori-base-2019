@@ -22,3 +22,6 @@ rules.ninja
 *.opendb
 Debug
 x64
+*.exr
+*.png
+*.patch

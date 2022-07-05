@@ -133,11 +133,12 @@ void Mesh::addChild(NoriObject *obj) {
     }
 }
 
-void Mesh::squareToArea(const Point3f& sample, Point3f& p, Vector3f& n) const {
-    size_t index = m_discretePDF->sample(sample[0]);
+void Mesh::squareToArea(const Point2f& sample, Point3f& p, Vector3f& n, float &pdf) const {
+    float sampleReuse = sample[0];
+    size_t index = m_discretePDF->sampleReuse(sampleReuse);
 
-    float alpha = 1.0f - sqrt(1.0f - sample[1]);
-    float beta = sample[2] * sqrt(1.0f - sample[1]);
+    float alpha = 1.0f - sqrt(1.0f - sampleReuse);
+    float beta = sample[1] * sqrt(1.0f - sampleReuse);
     float gama = 1.0f - alpha - beta;
 
     uint32_t i0 = m_F(0, index), i1 = m_F(1, index), i2 = m_F(2, index);
@@ -147,7 +148,6 @@ void Mesh::squareToArea(const Point3f& sample, Point3f& p, Vector3f& n) const {
     p = (alpha * p0) + (beta * p1) + (gama * p2);
 
     if (m_N.size() > 0) {
-        // might be wrong
         const Point3f n0 = m_N.col(i0), n1 = m_N.col(i1), n2 = m_N.col(i2);
         n = (alpha * n0) + (beta * n1) + (gama * n2);
     }

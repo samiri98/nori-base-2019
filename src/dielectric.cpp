@@ -18,6 +18,7 @@
 
 #include <nori/bsdf.h>
 #include <nori/frame.h>
+#include <nori/dpdf.h>
 
 NORI_NAMESPACE_BEGIN
 
@@ -43,7 +44,61 @@ public:
     }
 
     Color3f sample(BSDFQueryRecord &bRec, const Point2f &sample) const {
-        throw NoriException("Unimplemented!");
+        //throw NoriException("Unimplemented!");
+        if (Frame::cosTheta(bRec.wi) == 0)
+            return Color3f(0.0f);
+
+        float n1, n2;
+        Vector3f normal;
+
+        // in the case that the ray comes from behing the mesh
+        // this first case.
+        // intIOR is the index of refraction inside of the object
+        // extIOR is the index of refraction outside the object
+        if (Frame::cosTheta(bRec.wi) <= 0.0f) {
+            n1 = m_intIOR;
+            n2 = m_extIOR;
+            normal = Vector3f(0, 0, -1.0f);
+        }
+        else {
+            n1 = m_extIOR;
+            n2 = m_intIOR;
+            normal = Vector3f(0, 0, 1.0f);
+        }
+
+        auto reflectionFraction = fresnel(Frame::cosTheta(bRec.wi), n1, n2);
+        bRec.measure = EDiscrete;
+
+        auto discretePDF = DiscretePDF(2);
+        discretePDF.append(1 - reflectionFraction);
+        discretePDF.append(reflectionFraction);
+        discretePDF.normalize();
+        float reusedSample = sample[0];
+        size_t isReflected = discretePDF.sampleReuse(reusedSample);
+        if (isReflected) {
+            // Reflection in local coordinates
+            bRec.wo = 2 * normal * bRec.wi.dot(normal) - bRec.wi;
+            bRec.eta = 1.0f;
+            //bRec.eta = reflectionFraction;
+        }
+        else {
+            float eta = n1 / n2; // snells law
+
+            // From slide 26 of lecture 4
+            float cost = bRec.wi.dot(normal);
+            cost = sqrt(1.0f - eta * eta * (1 - cost * cost));
+
+            Vector3f reflection = -cost * normal; // This is the vector form to obtain refracted (transmitted) direction
+            reflection -= eta * (bRec.wi - bRec.wi.dot(normal) * normal); // From slide 31 of lecture 4
+
+            bRec.wo = reflection;
+            bRec.eta = eta;
+            //bRec.eta = 1 - reflectionFraction;
+
+        }
+
+        if (Frame::cosTheta(bRec.wo) == 0.0f) return Color3f(0.0f);
+        return Color3f(bRec.eta * bRec.eta);
     }
 
     std::string toString() const {

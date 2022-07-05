@@ -155,10 +155,6 @@ bool Accel::rayIntersect(const Ray3f &ray_, Intersection &its, bool shadowRay) c
     Ray3f ray(ray_); /// Make a copy of the ray (we will need to update its '.maxt' value)
 
     foundIntersection = octree_traversal(shadowRay, ray, its, f, m_root);
-    
-    if (foundIntersection) {
-        count++;
-    }
 
     if (foundIntersection && shadowRay) {
         return foundIntersection;

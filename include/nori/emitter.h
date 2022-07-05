@@ -31,6 +31,8 @@ struct EmitterQueryRecord {
 
     Vector3f n;
 
+    float pdf;
+
     const Mesh* mesh;
 
     EmitterQueryRecord(Point3f p, const Mesh *mesh) : p(p), mesh(mesh) {}
@@ -42,7 +44,7 @@ struct EmitterQueryRecord {
 class Emitter : public NoriObject {
 public:
 
-    virtual Color3f sample(const Point3f& sample, EmitterQueryRecord& query) const = 0;
+    virtual Color3f sample(const Point2f& sample, EmitterQueryRecord& query) const = 0;
 
     virtual Color3f eval(EmitterQueryRecord& query) const = 0;
 

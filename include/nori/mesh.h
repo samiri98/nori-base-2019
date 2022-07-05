@@ -164,7 +164,7 @@ public:
      * */
     EClassType getClassType() const { return EMesh; }
 
-    void squareToArea(const Point3f& sample, Point3f& p, Vector3f& n) const;
+    void squareToArea(const Point2f& sample, Point3f& p, Vector3f& n, float& pdf) const;
 
     float squareToAreaPDF() const;
 
@@ -181,7 +181,7 @@ protected:
     BSDF         *m_bsdf = nullptr;      ///< BSDF of the surface
     Emitter    *m_emitter = nullptr;     ///< Associated emitter, if any
     BoundingBox3f m_bbox;                ///< Bounding box of the mesh
-    DiscretePDF   *m_discretePDF;
+    DiscretePDF   *m_discretePDF = nullptr;
 };
 
 NORI_NAMESPACE_END
