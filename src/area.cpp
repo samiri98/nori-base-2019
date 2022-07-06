@@ -31,7 +31,7 @@ public:
         return pdf;
     }
 
-    virtual Color3f getRadiance(const Mesh * mesh) const {
+    virtual Color3f getRadiance() const {
         return radiance;
     }
 

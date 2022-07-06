@@ -37,7 +37,7 @@ public:
 
             auto itsMeshEmitter = its.mesh->getEmitter();
             if (itsMeshEmitter != nullptr) {
-                li += itsMeshEmitter->getRadiance();
+                li += itsMeshEmitter->getRadiance(its.mesh);
             }
 
             EmitterQueryRecord q = EmitterQueryRecord(its.p, lightSource);
