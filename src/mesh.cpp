@@ -135,7 +135,8 @@ void Mesh::addChild(NoriObject *obj) {
 
 void Mesh::squareToArea(const Point2f& sample, Point3f& p, Vector3f& n, float &pdf) const {
     float sampleReuse = sample[0];
-    size_t index = m_discretePDF->sampleReuse(sampleReuse);
+    size_t index = m_discretePDF->sampleReuse(sampleReuse, pdf);
+    pdf *= surfaceArea(index);
 
     float alpha = 1.0f - sqrt(1.0f - sampleReuse);
     float beta = sample[1] * sqrt(1.0f - sampleReuse);

@@ -31,8 +31,9 @@ public:
 
             auto itsMeshEmitter = its.mesh->getEmitter();
             if (itsMeshEmitter != nullptr) {
-                li += (L * itsMeshEmitter->getRadiance());
-                break;
+                if (n.dot(-rayToCheck.d.normalized()) > 0) {
+                    li += (L * itsMeshEmitter->getRadiance());
+                }
             }
 
             float probability = fmin(L.maxCoeff(), 0.99);
@@ -45,8 +46,11 @@ public:
                 L /= probability;
                 if (bsdf != nullptr) {
                     L *= bsdf->sample(bsdfQ, sampler->next2D());
+                    rayToCheck = Ray3f(its.p, its.shFrame.toWorld(bsdfQ.wo));
                 }
-                rayToCheck = Ray3f(its.p, its.shFrame.toWorld(bsdfQ.wo));
+                else {
+                    break;
+                }
             }
             else {
                 break;
