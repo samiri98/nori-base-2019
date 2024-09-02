@@ -92,7 +92,6 @@ void Accel::build() {
     m_root = build(m_bbox, v, 0);
 }
 
-// todo: early stopping by ordered traversal
 bool Accel::octree_traversal(bool shadowRay, Ray3f &ray, Intersection& its, uint32_t &f, Node *node) const {
     bool foundIntersection = false;
     if (node == nullptr) {
