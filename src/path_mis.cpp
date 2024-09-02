@@ -25,7 +25,7 @@ public:
             return li;
         }
         size_t k = 1;
-        bool wasRefractive = true;
+        bool wasRefractive = false;
         bool firstTime = true;
         while (true) {
 
@@ -35,6 +35,7 @@ public:
             if (itsMeshEmitter != nullptr && wasRefractive) {
                 if (n.dot(-rayToCheck.d.normalized()) > 0) {
                     li += (L * itsMeshEmitter->getRadiance());
+                    //k++;
                 }
             }
 
@@ -52,6 +53,11 @@ public:
             auto lightSourceEmitter = lightSource->getEmitter();
 
             if (bsdf) {
+                /*auto itsMeshEmitter = its.mesh->getEmitter();
+                if (itsMeshEmitter != nullptr) {
+                    li += itsMeshEmitter->getRadiance();
+                }*/
+
                 EmitterQueryRecord q = EmitterQueryRecord(its.p, lightSource);
                 auto sample = lightSourceEmitter->sample(sampler->next2D(), q);
                 int isVisible = 0;
@@ -74,17 +80,20 @@ public:
                 }
 
                 Color3f directIllumination = ((geometricTerm * le.cwiseProduct(diffuse)) / (lightSourceEmitter->pdf(q) * discretePDF[index]));
-                //Color3f directIllumination = ((geometricTerm * le.cwiseProduct(diffuse)) / (q.pdf * discretePDF[index]));
                 float weight = 1.0f;
                 if (bsdf) {
                     auto plight = (lightSourceEmitter->pdf(q));
                     auto pbsdf = bsdf->pdf(bsdfQ);
-                    if (fabs(q.n.normalized().dot(-q.wo.normalized())) != 0) {
-                        plight = plight / fabs(q.n.normalized().dot(-q.wo.normalized())) * q.wo.squaredNorm();
-                        weight = plight / (plight + pbsdf);
-                    }
+                    plight = plight / fabs(q.n.normalized().dot(-q.wo.normalized())) * q.wo.squaredNorm();
+                    weight = plight / (plight + pbsdf);
                 }
+
                 li += (L * directIllumination * weight);
+                if (bsdf->isDiffuse()) {
+                    //k++;
+                }
+                //li += (L * ((geometricTerm * le.cwiseProduct(diffuse)) / (q.pdf * discretePDF[index])));
+                ////////////////////////////
             }
 
             float probability = fmin(L.maxCoeff() * acceta * acceta, 0.99);
@@ -96,6 +105,8 @@ public:
 
             auto end = sampler->next1D();
             if (end < probability) {
+                ////////////////////////////
+
                 Vector3f d = its.shFrame.toLocal(Vector3f(rayToCheck.d));
                 BSDFQueryRecord bsdfQ(-d.normalized());
                 if (bsdf != nullptr) {
@@ -113,16 +124,15 @@ public:
                     if (its.mesh->getEmitter()) {
                         EmitterQueryRecord q = EmitterQueryRecord(its.p, its.mesh);
                         q.wo = bsdfQ.wo;
-                        Color3f directIllumination = ((its.mesh->getEmitter()->eval(q).cwiseProduct(brdfTemp) / (discretePDF[index])));
+                        Color3f directIllumination = ((its.mesh->getEmitter()->eval(q).cwiseProduct(bsdf->eval(bsdfQ)) / (bsdf->pdf(bsdfQ) * discretePDF[index])));
                         float weight = 1.0f;
                         if (bsdf) {
                             auto plight = (its.mesh->getEmitter()->pdf(q));
                             auto pbsdf = bsdf->pdf(bsdfQ);
-                            if (fabs(q.n.normalized().dot(-q.wo.normalized())) != 0) {
-                                plight = plight / fabs(q.n.normalized().dot(-q.wo.normalized())) * q.wo.squaredNorm();
-                                weight = pbsdf / (plight + pbsdf);
-                            }
+                            plight = plight / fabs(q.n.normalized().dot(-q.wo.normalized())) * q.wo.squaredNorm();
+                            weight = pbsdf / (plight + pbsdf);
                         }
+
                         li += (L * directIllumination * weight);
                     }
                 }
