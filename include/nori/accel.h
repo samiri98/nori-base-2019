@@ -19,8 +19,6 @@
 #pragma once
 
 #include <nori/mesh.h>
-#include <nori/bbox.h>
-#include <set>
 
 NORI_NAMESPACE_BEGIN
 
@@ -32,19 +30,6 @@ NORI_NAMESPACE_BEGIN
  */
 class Accel {
 public:
-    struct Node {
-        BoundingBox3f box;
-        char type;
-    };
-
-    struct ParentNode: Node {
-        Node* children[8];
-    };
-
-    struct ChildNode: Node {
-        std::vector<uint32_t> triangles;
-    };
-
     /**
      * \brief Register a triangle mesh for inclusion in the acceleration
      * data structure
@@ -55,16 +40,6 @@ public:
 
     /// Build the acceleration data structure (currently a no-op)
     void build();
-
-    /// <summary>
-    /// to build the octree
-    /// </summary>
-    /// <param name="box"> bounding box of the entire scene</param>
-    /// <param name="triangles">list of indices of the m_mesh</param>
-    /// <returns>the root of the octree</returns>
-    Node* build(BoundingBox3f box, std::vector<uint32_t> triangles, uint32_t depth);
-
-    bool Accel::octree_traversal(bool shadowRay, Ray3f& ray, Intersection& its, uint32_t& f, Node *node) const;
 
     /// Return an axis-aligned box that bounds the scene
     const BoundingBox3f &getBoundingBox() const { return m_bbox; }
@@ -93,10 +68,6 @@ public:
 private:
     Mesh         *m_mesh = nullptr; ///< Mesh (only a single one for now)
     BoundingBox3f m_bbox;           ///< Bounding box of the entire scene
-    Node         *m_root;           ///< Root of the octree
-
-public:
-    mutable std::set<int> count;
 };
 
 NORI_NAMESPACE_END

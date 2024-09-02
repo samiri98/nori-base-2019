@@ -155,10 +155,6 @@ template <typename _PointType> struct TBoundingBox {
             return (bbox.min.array() < max.array()).all() 
                 && (bbox.max.array() > min.array()).all();
         } else {
-           /* cout << (bbox.min.array() <= max.array()) << endl;
-            cout << "+++++++++++++++++++++" << endl;
-            cout << (bbox.max.array() >= min.array()) << endl;*/
-
             return (bbox.min.array() <= max.array()).all() 
                 && (bbox.max.array() >= min.array()).all();
         }
