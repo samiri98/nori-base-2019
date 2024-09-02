@@ -9,19 +9,17 @@ public:
         radiance = props.getColor("radiance");
     }
 
-    Color3f sample(const Point2f& sample, EmitterQueryRecord& query) const {
+    Color3f sample(const Point3f& sample, EmitterQueryRecord& query) const {
         auto mesh = query.mesh;
         Point3f p;
         Vector3f n;
-        mesh->squareToArea(sample, p, n, query.pdf);
+        mesh->squareToArea(sample, p, n);
         query.wo = p - query.p;
         query.n = n;
         return radiance;
     }
 
     Color3f eval(EmitterQueryRecord& query) const {
-        if ((-query.wo).normalized().dot(query.n.normalized()) <= 0) return Color3f(0.f);
-
         return radiance;
     }
 

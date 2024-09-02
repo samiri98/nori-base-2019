@@ -53,13 +53,14 @@ public:
      */
     virtual Color3f Li(const Scene *scene, Sampler *sampler, const Ray3f &ray) const = 0;
 
-    Color3f LiRecursive(const Scene* scene, Sampler* sampler, const Ray3f& ray, const Mesh* currMesh) const {};
-
     /**
      * \brief Return the type of object (i.e. Mesh/BSDF/etc.) 
      * provided by this instance
      * */
     EClassType getClassType() const { return EIntegrator; }
+
+public:
+    mutable int count = 0;
 };
 
 NORI_NAMESPACE_END

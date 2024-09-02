@@ -117,6 +117,7 @@ static void render(Scene *scene, const std::string &filename) {
 
         /// Default: parallel rendering
         tbb::parallel_for(range, map);
+        cout << scene->getIntegrator()->count << endl;
         cout << "done. (took " << timer.elapsedString() << ")" << endl;
     });
 
