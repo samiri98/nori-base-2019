@@ -98,7 +98,7 @@ public:
         }
 
         if (Frame::cosTheta(bRec.wo) == 0.0f) return Color3f(0.0f);
-        return Color3f(bRec.eta);
+        return Color3f(bRec.eta * bRec.eta);
     }
 
     std::string toString() const {

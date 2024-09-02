@@ -50,7 +50,7 @@ public:
 
     virtual float pdf(EmitterQueryRecord& query) const = 0;
 
-    virtual Color3f getRadiance() const = 0;
+    virtual Color3f getRadiance(const Mesh* mesh) const = 0;
 
     /**
      * \brief Return the type of object (i.e. Mesh/Emitter/etc.) 
