@@ -115,17 +115,6 @@ public:
     /// Return a string summary of the scene (for debugging purposes)
     std::string toString() const;
 
-    std::vector<Mesh*> getAllEmmiterMeshes() const {
-        std::vector<Mesh*> result;
-        for (size_t i = 0; i < m_meshes.size(); i++)
-        {
-            if (m_meshes[i]->getEmitter() != nullptr) {
-                result.push_back(m_meshes[i]);
-            }
-        }
-        return result;
-    }
-
     EClassType getClassType() const { return EScene; }
 private:
     std::vector<Mesh *> m_meshes;

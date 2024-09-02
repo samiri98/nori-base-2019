@@ -21,7 +21,6 @@
 #include <nori/object.h>
 #include <nori/frame.h>
 #include <nori/bbox.h>
-#include <nori/dpdf.h>
 
 NORI_NAMESPACE_BEGIN
 
@@ -164,10 +163,6 @@ public:
      * */
     EClassType getClassType() const { return EMesh; }
 
-    void squareToArea(const Point3f& sample, Point3f& p, Vector3f& n) const;
-
-    float squareToAreaPDF() const;
-
 protected:
     /// Create an empty mesh
     Mesh();
@@ -181,7 +176,6 @@ protected:
     BSDF         *m_bsdf = nullptr;      ///< BSDF of the surface
     Emitter    *m_emitter = nullptr;     ///< Associated emitter, if any
     BoundingBox3f m_bbox;                ///< Bounding box of the mesh
-    DiscretePDF   *m_discretePDF;
 };
 
 NORI_NAMESPACE_END

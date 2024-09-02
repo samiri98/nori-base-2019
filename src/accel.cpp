@@ -22,24 +22,18 @@
 NORI_NAMESPACE_BEGIN
 
 void Accel::addMesh(Mesh *mesh) {
-    m_mesh.push_back(mesh);
-    for (auto mesh : m_mesh) {
-        m_bbox.expandBy(mesh->getBoundingBox());
-    }
+    if (m_mesh)
+        throw NoriException("Accel: only a single mesh is supported!");
+    m_mesh = mesh;
+    m_bbox = m_mesh->getBoundingBox();
 }
 
 // todo: parallelize this code
-Accel::Node* Accel::build(BoundingBox3f box, std::vector<std::vector<uint32_t>> triangles, uint32_t depth) {
-    size_t sizeOfTriangles = 0;
-    for (size_t i = 0; i < triangles.size(); i++)
-    {
-        sizeOfTriangles += triangles[i].size();
-    }
-    
-    if (sizeOfTriangles == 0)
+Accel::Node* Accel::build(BoundingBox3f box, std::vector<uint32_t> triangles, uint32_t depth) {
+    if (triangles.size() == 0)
         return nullptr;
 
-    if (sizeOfTriangles <= 10 || depth > 10) {
+    if (triangles.size() <= 10 || depth > 10) {
         Accel::ChildNode* leaf = new Accel::ChildNode();
         leaf->type = 1;
         leaf->box = box;
@@ -47,7 +41,7 @@ Accel::Node* Accel::build(BoundingBox3f box, std::vector<std::vector<uint32_t>> 
         return leaf;
     }
 
-    std::vector<std::vector<uint32_t>> list[8];
+    std::vector<uint32_t> list[8];
     std::vector<Point3f> dividors = { {0,0,0},
                                       {0,1,0},
                                       {1,0,0},
@@ -68,21 +62,15 @@ Accel::Node* Accel::build(BoundingBox3f box, std::vector<std::vector<uint32_t>> 
         sub_bbox.push_back(i_bbox);
     }
 
-    for (int j = 0; j < 8; j++) {
-        std::vector<std::vector<uint32_t>> trianglesPerMesh;
-        for (int i = 0; i < m_mesh.size(); i++) {
-            std::vector<uint32_t> trianglesTemp;
-            for (auto triangle : triangles[i]) {
-                BoundingBox3f t_bbox = m_mesh[i]->getBoundingBox(triangle);
-                if (sub_bbox[j].overlaps(t_bbox, false)) {
-                    trianglesTemp.push_back(triangle);
-                }
+    for (auto triangle : triangles) {
+        BoundingBox3f t_bbox = m_mesh->getBoundingBox(triangle);
+        for (int i = 0; i < 8; i++) {
+            if (sub_bbox[i].overlaps(t_bbox, false)) {
+                list[i].push_back(triangle);
             }
-            trianglesPerMesh.push_back(trianglesTemp);
         }
-        list[j] = trianglesPerMesh;
     }
-    
+
     Accel::ParentNode* node = new ParentNode();
     node->box = box;
     node->type = 0;
@@ -96,13 +84,10 @@ Accel::Node* Accel::build(BoundingBox3f box, std::vector<std::vector<uint32_t>> 
 
 void Accel::build() {
     /* Nothing to do here for now */
-    std::vector<std::vector<uint32_t>> v;
-    for (size_t i = 0; i < m_mesh.size(); i++) {
-        std::vector<uint32_t> temp;
-        for (size_t j = 0; j < m_mesh[i]->getTriangleCount(); j++) {
-            temp.push_back(j);
-        }
-        v.push_back(temp);
+    uint32_t size = m_mesh->getTriangleCount();
+    std::vector<uint32_t> v(size);
+    for (int i = 0; i < size; i++) {
+        v[i] = i;
     }
     m_root = build(m_bbox, v, 0);
 }
@@ -126,20 +111,17 @@ bool Accel::octree_traversal(bool shadowRay, Ray3f &ray, Intersection& its, uint
         }
         else {
             ChildNode* c = (ChildNode*)node;
-            for (size_t i = 0; i < m_mesh.size(); i++)
-            {
-                for (auto triangle : c->triangles[i]) {
-                    float u, v, t;
-                    if (m_mesh[i]->rayIntersect(triangle, ray, u, v, t)) {
-                        if (shadowRay) {
-                            return true;
-                        }
-                        ray.maxt = its.t = t;
-                        its.uv = Point2f(u, v);
-                        its.mesh = m_mesh[i];
-                        f = triangle;
-                        foundIntersection = true;
+            for (auto triangle : c->triangles) {
+                float u, v, t;
+                if (m_mesh->rayIntersect(triangle, ray, u, v, t)) {
+                    if (shadowRay) {
+                        return true;
                     }
+                    ray.maxt = its.t = t;
+                    its.uv = Point2f(u, v);
+                    its.mesh = m_mesh;
+                    f = triangle;
+                    foundIntersection = true;
                 }
             }
         }
@@ -155,11 +137,6 @@ bool Accel::rayIntersect(const Ray3f &ray_, Intersection &its, bool shadowRay) c
     Ray3f ray(ray_); /// Make a copy of the ray (we will need to update its '.maxt' value)
 
     foundIntersection = octree_traversal(shadowRay, ray, its, f, m_root);
-    
-    if (foundIntersection) {
-        count++;
-    }
-
     if (foundIntersection && shadowRay) {
         return foundIntersection;
     }

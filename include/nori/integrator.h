@@ -58,9 +58,6 @@ public:
      * provided by this instance
      * */
     EClassType getClassType() const { return EIntegrator; }
-
-public:
-    mutable int count = 0;
 };
 
 NORI_NAMESPACE_END
